@@ -25,17 +25,31 @@ export default function HomePage() {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Keyboard shortcut listener: press '/' to focus search
+  // Keyboard shortcut listener: press '/' to focus search, 'Escape' to close modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "/" && document.activeElement !== searchInputRef.current) {
+      if (e.key === "/" && document.activeElement !== searchInputRef.current && !activeScript) {
         e.preventDefault();
         searchInputRef.current?.focus();
+      } else if (e.key === "Escape" && activeScript) {
+        setActiveScript(null);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [activeScript]);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (activeScript) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [activeScript]);
 
   // Toast Helper
   const triggerToast = (msg: string) => {
@@ -253,61 +267,84 @@ fi
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredScripts.map((script) => (
-            <div
-              key={script.id}
-              onClick={() => {
-                setActiveScript(script);
-                setModalTab("code");
-              }}
-              className="cursor-pointer group bg-[#0e131f] hover:bg-[#121827] border border-slate-800/80 hover:border-slate-700 rounded-xl p-5 transition flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">
-                    {script.role}
-                  </span>
-                  <span className="text-[11px] font-mono text-slate-500">
-                    {script.language}
-                  </span>
-                </div>
-
-                <h3 className="text-sm font-semibold text-white group-hover:text-emerald-300 transition-colors mb-2">
-                  {script.title}
-                </h3>
-                <p className="text-xs text-slate-400 leading-relaxed mb-4 line-clamp-2">
-                  {script.summary}
-                </p>
+          {filteredScripts.length === 0 ? (
+            <div className="col-span-full py-16 px-4 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-900/30">
+              <div className="w-10 h-10 rounded-full bg-slate-800/80 flex items-center justify-center mx-auto mb-3 text-slate-500">
+                <Search className="w-4 h-4" />
               </div>
-
-              <div>
-                <div className="flex flex-wrap gap-1 mb-4">
-                  {script.tags.slice(0, 3).map((t) => (
-                    <span key={t} className="text-[10px] font-mono text-slate-500 bg-slate-900 px-1.5 py-0.5 rounded">
-                      #{t}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-500">
-                  <span className="group-hover:text-slate-300 transition flex items-center space-x-1">
-                    <span>Inspect details</span>
-                    <ChevronRight className="w-3 h-3" />
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCopy(script.code, `Copied ${script.title}`);
-                    }}
-                    className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
-                    title="Quick Copy Code"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
+              <h3 className="text-sm font-semibold text-white mb-1">No matching scripts found</h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto mb-4 leading-relaxed">
+                No scripts matched &quot;{searchQuery}&quot; under the &quot;{selectedRole}&quot; filter.
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedRole("All");
+                  setSelectedDifficulty("All");
+                }}
+                className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition"
+              >
+                Reset Filters
+              </button>
             </div>
-          ))}
+          ) : (
+            filteredScripts.map((script) => (
+              <div
+                key={script.id}
+                onClick={() => {
+                  setActiveScript(script);
+                  setModalTab("code");
+                }}
+                className="cursor-pointer group bg-[#0e131f] hover:bg-[#121827] border border-slate-800/80 hover:border-slate-700 rounded-xl p-5 transition flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">
+                      {script.role}
+                    </span>
+                    <span className="text-[11px] font-mono text-slate-500">
+                      {script.language}
+                    </span>
+                  </div>
+
+                  <h3 className="text-sm font-semibold text-white group-hover:text-emerald-300 transition-colors mb-2">
+                    {script.title}
+                  </h3>
+                  <p className="text-xs text-slate-400 leading-relaxed mb-4 line-clamp-2">
+                    {script.summary}
+                  </p>
+                </div>
+
+                <div>
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {script.tags.slice(0, 3).map((t) => (
+                      <span key={t} className="text-[10px] font-mono text-slate-500 bg-slate-900 px-1.5 py-0.5 rounded">
+                        #{t}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-500">
+                    <span className="group-hover:text-slate-300 transition flex items-center space-x-1">
+                      <span>Inspect details</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopy(script.code, `Copied ${script.title}`);
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition"
+                      title="Quick Copy Code"
+                      aria-label={`Copy code for ${script.title}`}
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </section>
 
@@ -334,6 +371,7 @@ fi
               </div>
               <button
                 onClick={() => setActiveScript(null)}
+                aria-label="Close dialog"
                 className="w-7 h-7 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition"
               >
                 <X className="w-4 h-4" />
