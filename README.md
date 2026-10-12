@@ -7,10 +7,10 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg?style=flat)](CONTRIBUTING.md)
 [![Production Hardened](https://img.shields.io/badge/Production-Hardened-blue.svg)](docs/beginner-guides/02-production-hardening-rules.md)
 [![Safe Docker Sandboxes](https://img.shields.io/badge/Docker-Sandbox%20Included-cyan.svg)](#-safe-testing-sandbox-run-anywhere-with-zero-risk)
-[![Vercel Hosted](https://img.shields.io/badge/Web%20Portal-Vercel%20Ready-black.svg?logo=vercel)](web-portal/)
+[![Vercel Hosted](https://img.shields.io/badge/Web%20Portal-Vercel%20Live-black.svg?logo=vercel)](https://ops-vault-sand.vercel.app)
 
 <p align="center">
-  <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fiemafzalhassan%2Fops-script-vault">
+  <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fiemafzalhassan%2Fops-vault">
     <img src="https://vercel.com/button" alt="Deploy with Vercel"/>
   </a>
 </p>
@@ -55,7 +55,7 @@ For example, to test the **SSL Certificate Expiry Checker**:
 ```bash
 docker run --rm alpine:3.20 /bin/sh -c '
   apk add --no-cache bash curl openssl && 
-  curl -fsSL https://raw.githubusercontent.com/iemafzalhassan/ops-script-vault/main/scripts/sre/ssl-cert-expiry-checker/cert_checker.sh | bash -s -- --warning-days 30 google.com github.com
+  curl -fsSL https://raw.githubusercontent.com/iemafzalhassan/ops-vault/main/scripts/sre/ssl-cert-expiry-checker/cert_checker.sh | bash -s -- --warning-days 30 google.com github.com
 '
 ```
 
@@ -112,7 +112,6 @@ The included web portal is built with **Next.js 15 (App Router)** and **Tailwind
 Click the **Deploy with Vercel** button above, or deploy manually:
 
 ```bash
-cd web-portal
 npm install
 npm run dev
 # Open http://localhost:3000
