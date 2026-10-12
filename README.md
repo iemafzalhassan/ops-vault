@@ -15,7 +15,7 @@
   </a>
 </p>
 
-**Explore the Live Interactive Portal:** [opsvault.vercel.app](https://vercel.com) (or deploy in 1-click above!)
+**Explore the Live Interactive Portal:** [ops-vault-sand.vercel.app](https://ops-vault-sand.vercel.app) (or deploy in 1-click above!)
 
 ---
 
