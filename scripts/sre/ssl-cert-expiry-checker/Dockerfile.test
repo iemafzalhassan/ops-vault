@@ -1,0 +1,12 @@
+FROM alpine:3.20
+
+RUN apk add --no-cache bash curl openssl coreutils jq python3
+
+WORKDIR /workspace
+
+COPY cert_checker.sh /workspace/
+COPY cert_checker.py /workspace/
+
+RUN chmod +x /workspace/cert_checker.sh /workspace/cert_checker.py
+
+CMD ["./cert_checker.sh", "--warning-days", "14", "google.com", "github.com"]

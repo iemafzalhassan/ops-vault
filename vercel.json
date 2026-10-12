@@ -1,0 +1,6 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "cd web-portal && npm run build",
+  "outputDirectory": "web-portal/.next",
+  "installCommand": "cd web-portal && npm install"
+}

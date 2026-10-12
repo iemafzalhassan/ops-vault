@@ -1,0 +1,66 @@
+name: OpsVault CI & Quality Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  shell-lint:
+    name: Lint Shell Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck
+        run: |
+          echo "Scanning all bash scripts for safe execution..."
+          find scripts -type f -name "*.sh" -exec shellcheck -e SC1091 {} +
+
+  python-lint:
+    name: Validate Python Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Linters
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      - name: Syntax Check Python Scripts
+        run: |
+          echo "Compiling and validating Python scripts..."
+          python -m compileall scripts/
+          flake8 scripts/ --count --select=E9,F63,F7,F82 --show-source --statistics
+
+  portal-build:
+    name: Verify Web Portal Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'web-portal/package-lock.json'
+
+      - name: Install Portal Dependencies & Build
+        run: |
+          cd web-portal
+          npm ci || npm install
+          npm run build
