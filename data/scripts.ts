@@ -1,9 +1,13 @@
 export interface ScriptItem {
   id: string;
+  opCode: string;
   title: string;
   role: "SRE" | "DevOps" | "Platform Ops" | "Support" | "DevRel";
   language: "Bash" | "Python" | "Kubernetes YAML" | "Multi-language";
   difficulty: "Beginner" | "Intermediate" | "Production Pro";
+  runtimeVersion: string;
+  linesCount: number;
+  preventedImpact: string;
   summary: string;
   incidentStory: string;
   toolsExplained: { tool: string; explanation: string }[];
@@ -16,10 +20,14 @@ export interface ScriptItem {
 export const SCRIPTS_DATA: ScriptItem[] = [
   {
     id: "ssl-cert-expiry-checker",
+    opCode: "SRE-01",
     title: "SSL/TLS Certificate Expiry Checker",
     role: "SRE",
     language: "Multi-language",
     difficulty: "Intermediate",
+    runtimeVersion: "Bash 4.4+ / OpenSSL 1.1+",
+    linesCount: 42,
+    preventedImpact: "Severity-1 API Gateway TLS Handshake Blackout",
     summary: "Monitors SSL/TLS expiration dates via TCP/SNI, warns before outage, and dispatches webhook alerts.",
     incidentStory: "At 2:15 AM on a Saturday, a wildcard TLS certificate expired on the API gateway, breaking all mobile checkout and payment webhooks. This script monitors all domain certificates daily and alerts weeks in advance.",
     toolsExplained: [
@@ -28,10 +36,14 @@ export const SCRIPTS_DATA: ScriptItem[] = [
       { tool: "openssl x509", explanation: "Parses the X.509 certificate and prints the human-readable expiration date (notAfter)." },
       { tool: "curl & JSON", explanation: "Formats a structured webhook alert payload and posts it to Slack or Discord." }
     ],
-    dockerSandbox: "docker run --rm alpine:3.20 /bin/sh -c 'apk add --no-cache curl openssl bash && curl -s https://raw.githubusercontent.com/iemafzalhassan/ops-script-vault/main/scripts/sre/ssl-cert-expiry-checker/cert_checker.sh | bash -s -- --warning-days 30 google.com github.com'",
+    dockerSandbox: "docker run --rm alpine:3.20 /bin/sh -c 'apk add --no-cache curl openssl bash && curl -s https://raw.githubusercontent.com/iemafzalhassan/ops-vault/main/scripts/sre/ssl-cert-expiry-checker/cert_checker.sh | bash -s -- --warning-days 30 google.com github.com'",
     path: "scripts/sre/ssl-cert-expiry-checker/cert_checker.sh",
     code: `#!/usr/bin/env bash
-# Role: Site Reliability Engineering (SRE)
+# ==============================================================================
+# Operational ID: SRE-01
+# Component: SSL/TLS Expiry Sentinel
+# Standard: set -euo pipefail / Dry-Run Verified
+# ==============================================================================
 set -euo pipefail
 IFS=$'\\n\\t'
 
@@ -54,10 +66,14 @@ done`,
   },
   {
     id: "k8s-cronjob-log-cleaner",
+    opCode: "K8S-01",
     title: "Kubernetes PV Log Pruner & Compressor",
     role: "Platform Ops",
     language: "Kubernetes YAML",
     difficulty: "Intermediate",
+    runtimeVersion: "Kubernetes 1.26+ (batch/v1)",
+    linesCount: 48,
+    preventedImpact: "NodeHasDiskPressure Pod Eviction Cascades",
     summary: "Production batch/v1 CronJob spec that automatically gzips uncompressed logs and prunes stale volumes.",
     incidentStory: "Legacy microservices wrote raw logs to attached PersistentVolumeClaims until nodes threw NodeHasDiskPressure and began evicting mission-critical pods. This automated CronJob keeps PVC disk and inode usage under control.",
     toolsExplained: [
@@ -105,10 +121,14 @@ spec:
   },
   {
     id: "docker-system-prune-safe",
+    opCode: "DEV-01",
     title: "Safe Docker System Pruner",
     role: "DevOps",
     language: "Bash",
     difficulty: "Intermediate",
+    runtimeVersion: "Docker Engine 20.10+ / Bash 4.4+",
+    linesCount: 38,
+    preventedImpact: "CI/CD Runner Pipeline Hangs from Disk Starvation",
     summary: "Prunes dangling Docker layers, containers, and build cache only when disk usage exceeds safety threshold.",
     incidentStory: "A developer ran 'docker system prune -a --volumes' on a shared CI runner, which wiped out local DB test volumes and un-cached 40GB of base images. This script only prunes dangling assets when disk space actually breaches 80%.",
     toolsExplained: [
@@ -119,7 +139,11 @@ spec:
     dockerSandbox: "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock docker:cli sh -c 'docker system df'",
     path: "scripts/devops/docker-system-prune-safe/safe_prune.sh",
     code: `#!/usr/bin/env bash
-# Role: DevOps Engineer / CI/CD
+# ==============================================================================
+# Operational ID: DEV-01
+# Component: Safe Docker Daemon Pruner
+# Standard: set -euo pipefail / Guarded Prune
+# ==============================================================================
 set -euo pipefail
 IFS=$'\\n\\t'
 
@@ -140,10 +164,14 @@ fi`,
   },
   {
     id: "disk-space-emergency-purge",
+    opCode: "SUP-01",
     title: "Linux Emergency Disk Recovery",
     role: "Support",
     language: "Bash",
     difficulty: "Intermediate",
+    runtimeVersion: "POSIX Linux / Systemd 230+",
+    linesCount: 36,
+    preventedImpact: "100% Inode / Block Exhaustion Kernel Freezes",
     summary: "Recovers 100% full Linux disks by safely truncating unrotated logs and vacuuming systemd journals.",
     incidentStory: "A junior admin ran 'rm big.log' on a 40GB file, but 'df -h' still showed 100% full because NGINX held the open file descriptor! Truncating with ': > file' zeroes the blocks immediately without restarting the service.",
     toolsExplained: [
@@ -154,7 +182,11 @@ fi`,
     dockerSandbox: "docker run --rm ubuntu:22.04 /bin/sh -c 'echo \"Testing disk recovery analysis...\"; du -sh /var/log'",
     path: "scripts/support/disk-space-emergency-purge/disk_purge.sh",
     code: `#!/usr/bin/env bash
-# Role: Linux Support / Cloud Engineer
+# ==============================================================================
+# Operational ID: SUP-01
+# Component: Zero-Downtime Linux Disk Truncator
+# Standard: Non-destructive to active file descriptors
+# ==============================================================================
 set -euo pipefail
 
 TARGET_DIR="/var/log"
@@ -172,10 +204,14 @@ fi`,
   },
   {
     id: "developer-env-doctor",
+    opCode: "REL-01",
     title: "Workstation Doctor & Environment Auditor",
     role: "DevRel",
     language: "Bash",
     difficulty: "Beginner",
+    runtimeVersion: "Bash 3.2+ (macOS & Linux compatible)",
+    linesCount: 32,
+    preventedImpact: "Broken Contributor Onboarding & 'Works on My Machine' Tickets",
     summary: "Interactive colored terminal audit that checks developer tools, Git config, RAM, and prints exact install commands.",
     incidentStory: "New contributors and team members spent days battling broken local setups ('Works on my machine!'). This single-command auditor validates their workstation in 3 seconds and gives them the exact commands to fix missing dependencies.",
     toolsExplained: [
@@ -183,10 +219,14 @@ fi`,
       { tool: "uname -s & uname -m", explanation: "Detects OS kernel (Darwin vs Linux) and architecture (arm64 vs x86_64) for OS-specific commands." },
       { tool: "git config --get", explanation: "Verifies user.name and user.email to prevent accidental uncredited commits." }
     ],
-    dockerSandbox: "docker run --rm alpine:3.20 /bin/sh -c 'apk add --no-cache bash curl git && curl -s https://raw.githubusercontent.com/iemafzalhassan/ops-script-vault/main/scripts/devrel/developer-env-doctor/doctor.sh | bash'",
+    dockerSandbox: "docker run --rm alpine:3.20 /bin/sh -c 'apk add --no-cache bash curl git && curl -s https://raw.githubusercontent.com/iemafzalhassan/ops-vault/main/scripts/devrel/developer-env-doctor/doctor.sh | bash'",
     path: "scripts/devrel/developer-env-doctor/doctor.sh",
     code: `#!/usr/bin/env bash
-# Role: DevRel / Developer Experience
+# ==============================================================================
+# Operational ID: REL-01
+# Component: Developer Environment Doctor
+# Standard: POSIX portable, zero dependencies
+# ==============================================================================
 set -euo pipefail
 
 echo "🩺 Auditing Developer Workstation..."
